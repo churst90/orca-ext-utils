@@ -1,0 +1,43 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "orca-ext-utils"
+version = "0.1.0"
+description = "Shared utilities for Orca screen-reader user extensions: screen rect, mouse synth, key-grab batching, active-window info."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "LGPL-2.1-or-later" }
+authors = [
+    { name = "Cody Hurst", email = "codythurst@gmail.com" },
+]
+keywords = ["orca", "accessibility", "screen-reader", "at-spi", "extension"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Environment :: X11 Applications :: GTK",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: GNU Lesser General Public License v2 or later (LGPLv2+)",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Adaptive Technologies",
+]
+
+# Runtime deps: only standard Python + PyGObject. PyGObject provides
+# gi.repository.{Atspi, Gdk}; we never import third-party packages.
+# PyGObject is intentionally NOT listed because every system that
+# runs Orca already has it (Orca itself depends on it), and listing
+# it here would force pip to try and rebuild against the system
+# typelib in awkward ways.
+
+[project.urls]
+Homepage = "https://github.com/churst90/orca-ext-utils"
+Issues = "https://github.com/churst90/orca-ext-utils/issues"
+
+[tool.setuptools.packages.find]
+include = ["orca_ext_utils*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
