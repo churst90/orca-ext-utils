@@ -12,12 +12,21 @@ need to know what pip is.
 
 ## Modules
 
+Each module is independent -- vendor or import only the ones you need.
+
 | Module | What it does |
 |---|---|
 | `screen_rect` | Screen-coord rect for an AT-SPI accessible object. |
+| `screen_capture` | Region capture (Gdk → ImageMagick → xdg-desktop-portal). |
 | `mouse_input` | Mouse click / press / release / move synthesis at coords. |
 | `keyboard_grab` | Batch wrapper around `Atspi.Device.add_key_grab` for "grab a keyset." |
 | `window_info` | Active toplevel window: screen rect + X11 window ID. |
+| `compositor_query` | Multi-monitor geometry, DPI scaling, refresh rate. |
+| `text_to_braille` | Text → braille cell bytes (liblouis optional, ASCII fallback). |
+| `notification` | libnotify desktop-notification facade with consistent app-name. |
+| `process_supervisor` | Sync + async subprocess with timeout, signals, GLib integration. |
+| `key_combo_helpers` | keysym ↔ name, modifier-mask parsing, chord serialization. |
+| `extension_settings` | Per-extension key/value store (GSettings or JSON fallback). |
 | `_backend` | X11 vs Wayland detection (Gdk display class + env fallback). |
 
 See [docs/backends.md](docs/backends.md) for the per-feature
@@ -94,11 +103,21 @@ and treat it as you would any Python library. Both shapes work.
 |---|---|---|---|
 | `screen_rect.for_accessible` | full | returns `None` | Atspi + Gdk.X11 fallback. |
 | `screen_rect.for_active_window` | full | returns `None` | Gdk-based. |
+| `screen_capture.capture_region_async` | full (Gdk / ImageMagick) | full (xdg-portal) | Async on Wayland; portal may prompt user on first call per session. |
+| `screen_capture.upscale_png` | works | works | Pure GdkPixbuf, no display server needed. |
 | `mouse_input.click_at` | works | compositor-dependent | XTest under AT-SPI on X11; Wayland varies. |
 | `mouse_input.move_to` | works | compositor-dependent | Same. |
 | `keyboard_grab.KeysetGrab` | works | compositor-dependent | `failed_keysyms` reports which grabs the system refused. |
 | `window_info.active_window_rect` | works | returns `None` | Gdk's `get_origin` returns "unknown" on Wayland. |
 | `window_info.active_window_xid` | works | returns `None` | XID is X11-only by definition. |
+| `compositor_query.monitors` | works | works | Both via `Gdk.Display.get_monitor`. |
+| `compositor_query.monitor_at_point` | works | works | Same. |
+| `text_to_braille.text_to_cells` | works | works | Pure-Python; liblouis optional for non-Latin / Grade 2. |
+| `notification.notify` | works | works | Backed by libnotify (org.freedesktop.Notifications). |
+| `process_supervisor.run_sync` | works | works | Pure subprocess; no display server needed. |
+| `process_supervisor.run_async` | works | works | Needs a running GLib main loop. |
+| `key_combo_helpers.parse_chord` | works | works | Pure Python table + optional Gdk fallback. |
+| `extension_settings.Settings` | works | works | GSettings if schema installed, JSON file under `$XDG_CONFIG_HOME/orca/extensions/` otherwise. |
 
 ## Tests
 

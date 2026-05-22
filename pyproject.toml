@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "orca-ext-utils"
-version = "0.1.0"
-description = "Shared utilities for Orca screen-reader user extensions: screen rect, mouse synth, key-grab batching, active-window info."
+version = "0.2.0"
+description = "Shared utilities for Orca screen-reader user extensions: screen rect, screen capture, mouse synth, key-grab batching, active-window info, monitor geometry, text-to-braille, notifications, subprocess supervision, key combo parsing, per-extension settings."
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "LGPL-2.1-or-later" }

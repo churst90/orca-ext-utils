@@ -93,3 +93,101 @@ windows don't have X11 window IDs. `active_window_rect` returns
 `None` on Wayland because Gdk's `get_origin()` returns success=False
 there (the compositor doesn't expose the toplevel's screen
 position to non-privileged clients).
+
+## screen_capture
+
+| Function | X11 (Xorg) | XWayland | Wayland (Mutter) | Wayland (KWin) | Wayland (wlroots) |
+|---|---|---|---|---|---|
+| `capture_region_async` (Gdk) | works | works for XWayland apps | n/a | n/a | n/a |
+| `capture_region_async` (ImageMagick) | works if `import` installed | works | n/a | n/a | n/a |
+| `capture_region_async` (portal) | works | works | works | works | works (if `xdg-desktop-portal-wlr` installed) |
+| `upscale_png` | works | works | works | works | works |
+
+Backends are tried in order: Gdk → ImageMagick → portal. The first
+two are synchronous; portal is async via D-Bus. On Wayland, only
+the portal backend will succeed, and it MAY prompt the user the
+first time a given process requests a screenshot (one-time per
+session). Callers should treat first-time latency as several seconds.
+
+## compositor_query
+
+| Function | X11 | Wayland |
+|---|---|---|
+| `monitors()` | works | works |
+| `primary_monitor()` | works | works (when compositor exposes one) |
+| `monitor_at_point(x, y)` | works | works |
+| `virtual_screen_rect()` | works | works |
+
+All queries go through `Gdk.Display.get_monitor`, which is backed
+by Xrandr on X11 and `xdg_output` on Wayland. Both work the same
+from the API's perspective. Hot-plug events may cause a transient
+`None` return during compositor reconfiguration; callers should
+retry once if a fresh monitor list comes back empty.
+
+## text_to_braille
+
+| Function | Without liblouis | With liblouis |
+|---|---|---|
+| `text_to_cells(text)` | ASCII table only (US computer braille) | Same — table not auto-selected |
+| `text_to_cells(text, table="en-ueb-g2.ctb")` | falls back to ASCII | UEB Grade 2 contractions |
+| `text_to_cells(text, table="ko-g1.ctb")` | falls back to ASCII (blank for Korean) | Korean braille |
+| `available_backends()` | `("ascii",)` | `("ascii", "liblouis")` |
+
+liblouis is an optional dep. Install with `dnf install python3-louis`
+or `apt install python3-louis` to enable contracted English and
+non-Latin scripts. The ASCII table is always available and covers
+a-z, 0-9, common punctuation in US computer (8-dot) braille.
+
+## notification
+
+| Function | All platforms |
+|---|---|
+| `notify(...)` | works iff a notification daemon is running (most desktops ship one) |
+| `close(...)` | works on same conditions |
+| `is_available()` | True iff `gi.repository.Notify` imports successfully |
+
+Display server agnostic — uses the D-Bus
+`org.freedesktop.Notifications` interface. Headless environments
+(SSH, CI) get `is_available() == True` if libnotify is installed
+but `notify()` is a no-op (no daemon to receive the call).
+
+## process_supervisor
+
+| Function | All platforms |
+|---|---|
+| `is_available(executable)` | works via shutil.which |
+| `run_sync(argv, ...)` | works; blocks calling thread |
+| `run_async(argv, on_done, ...)` | works; needs GLib main loop running |
+
+Pure subprocess machinery — no display server interaction.
+
+## key_combo_helpers
+
+| Function | All platforms |
+|---|---|
+| `parse_chord("Ctrl+Shift+a")` | works (pure Python table) |
+| `format_chord(mask, keysym)` | works |
+| `name_to_keysym(name)` | works for built-in table; Gdk fallback when display is available |
+| `keysym_to_name(keysym)` | works for built-in table; Gdk fallback when display is available |
+
+The built-in table covers letters, digits, function keys, common
+named keys, and the numeric keypad. The Gdk fallbacks extend
+coverage to exotic keysyms but require a default display; in
+headless environments they return 0 / None silently.
+
+## extension_settings
+
+| Function | GSettings schema installed | No schema |
+|---|---|---|
+| `get(key)` | reads GSettings | reads JSON file |
+| `set(key, value)` | writes GSettings | atomic JSON write |
+| `delete(key)` | GSettings reset | removes JSON key |
+| `keys()` | GSettings list_keys | JSON dict keys |
+| `backend()` | `"gsettings"` | `"json"` |
+
+GSettings is preferred when an extension ships a schema
+(`org.gnome.orca.extensions.<name>.gschema.xml` installed to
+`/usr/share/glib-2.0/schemas/` or `$HOME/.local/share/glib-2.0/
+schemas/`). The JSON fallback writes to
+`$XDG_CONFIG_HOME/orca/extensions/<name>.json` with an atomic
+write (temp + rename in the same directory).
